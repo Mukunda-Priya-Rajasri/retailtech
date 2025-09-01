@@ -20,18 +20,26 @@ jobs:
 
       - name: Deploy to Azure VM
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USER }}@${{ secrets.AZURE_VM_IP }} << 'EOF' | tee ~/deploy.log
-            cd ~/retailtech
-            git pull origin main
+          ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_USER }}@${{ secrets.AZURE_VM_IP }} << 'EOF'
+            LOG_FILE=~/deploy.log
+            echo "Deployment started at $(date)" > $LOG_FILE
+
             # Backend
-            cd retailtechbackend
-            npm install
-            pm2 restart app || pm2 start app.js --name app
+            echo "Deploying backend..." >> $LOG_FILE
+            cd ~/retailtechbackend
+            git pull origin main >> $LOG_FILE 2>&1
+            npm install >> $LOG_FILE 2>&1
+            pm2 restart app || pm2 start app.js --name app >> $LOG_FILE 2>&1
+
             # Frontend
-            cd ../retailtechfrontend
-            npm install
-            npm run build
-            sudo rm -rf /var/www/html/*
-            sudo cp -r dist/* /var/www/html/
+            echo "Deploying frontend..." >> $LOG_FILE
+            cd ~/retailtechfrontend
+            git pull origin main >> $LOG_FILE 2>&1
+            npm install >> $LOG_FILE 2>&1
+            npm run build >> $LOG_FILE 2>&1
+            sudo rm -rf /var/www/html/* >> $LOG_FILE 2>&1
+            sudo cp -r dist/* /var/www/html/ >> $LOG_FILE 2>&1
+
+            echo "Deployment finished at $(date)" >> $LOG_FILE
           EOF
 
